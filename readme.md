@@ -51,7 +51,7 @@ DEEPSEEK_API_KEY=твой_ключ_если_используешь_api
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
-### Для дальнейшего запуска требуется запустить docker
+### Для дальнейшего запуска потребуется docker
 
 ```bash
 docker-compose up -d
