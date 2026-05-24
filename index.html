@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Assistant - Генератор работ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>🎓 Помощник студента</h1>
+    <p class="subtitle">Генератор студенческих работ с помощью ИИ</p>
+
+    <div class="input-group">
+        <label for="topicInput">📝 Тема работы:</label>
+        <textarea
+                id="topicInput"
+                placeholder="Например:&#10;• Что такое машинное обучение?&#10;• История развития искусственного интеллекта&#10;• Основы программирования на Python"
+        ></textarea>
+    </div>
+
+    <button class="generate-btn" id="generateBtn">
+        🚀 Сгенерировать работу
+    </button>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="color: #667eea; font-size: 16px;"> ИИ генерирует вашу работу...</p>
+        <p style="color: #7f8c8d; font-size: 14px; margin-top: 10px;">Это займёт несколько секунд</p>
+    </div>
+
+    <div class="error-section" id="errorSection">
+        <strong>❌ Ошибка!</strong>
+        <p id="errorMessage"></p>
+    </div>
+
+    <div class="success-section" id="successSection">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Работа готова!</div>
+        <div class="success-text">Ваша студенческая работа успешно сгенерирована</div>
+
+        <a id="downloadLink" class="download-btn" download>
+            📥 Скачать HTML файл
+        </a>
+
+        <div class="file-info" id="fileInfo">
+            Файл готов к скачиванию
+        </div>
+
+        <p style="margin-top: 20px; font-size: 14px; color: #155724;">
+            💡 <strong>Совет:</strong> Откройте файл в браузере или в Microsoft Word<br>
+            (в Word: Файл → Открыть → выберите HTML → Сохранить как DOCX)
+        </p>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-text">Генерация за 5-10 минут</div>
+        </div>
+        <div class="feature">
+            <div class="feature-icon"></div>
+            <div class="feature-text">Красивое форматирование HTML</div>
+        </div>
+        <div class="feature">
+            <div class="feature-icon"></div>
+            <div class="feature-text">Все данные остаются локально</div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>

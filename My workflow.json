@@ -1,0 +1,299 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-ai",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        -368
+      ],
+      "id": "1eba7b6d-3952-48b1-a267-cfc495893870",
+      "name": "01_Webhook_ReceiveTopic",
+      "webhookId": "c54ec60f-e1b5-4edf-a1a0-580ba23347a9"
+    },
+    {
+      "parameters": {
+        "jsCode": "const topic = items[0].json.body?.topic || 'Информационные технологии';\n\nreturn [{\n  json: {\n    topic: topic,\n    outline: {\n      introduction: {\n        title: \"Введение\",\n        focus: \"Актуальность темы, цель и задачи работы, объект и предмет исследования, методы решения задач\",\n        forbid: \"не пиши историю вопроса, не давай определения терминам, не описывай теорию\",\n        targetWords: 1200\n      },\n      chapter1: {\n        title: \"Глава 1. Теоретические основы\",\n        focus: \"Основные понятия, определения, классификации, принципы работы, архитектура системы, сравнение с аналогами\",\n        forbid: \"не пиши практические примеры использования, не описывай установку и настройку, не повторяй введение\",\n        targetWords: 4500\n      },\n      chapter2: {\n        title: \"Глава 2. Практическое применение\",\n        focus: \"Инструменты и технологии, пошаговые алгоритмы действий, примеры использования, кейсы применения, типичные ошибки\",\n        forbid: \"не пиши теоретические определения, не повторяй материал главы 1, не описывай базовые понятия\",\n        targetWords: 4000\n      },\n      chapter3: {\n        title: \"Глава 3. Анализ и перспективы развития\",\n        focus: \"Современные тренды, проблемы отрасли, рекомендации по внедрению, перспективы развития, будущие направления\",\n        forbid: \"не пиши базовые определения, не дублируй практические шаги из главы 2, не повторяй теорию\",\n        targetWords: 4000\n      },\n      conclusion: {\n        title: \"Заключение\",\n        focus: \"Краткие выводы по каждой главе, оценка достижения цели работы, итоговые результаты исследования\",\n        forbid: \"не добавляй новую информацию, не пиши длинные рассуждения, не повторяй дословно текст из глав\",\n        targetWords: 1200\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        -368
+      ],
+      "id": "4fffe68d-4e1f-4c2e-a916-e6255c858a2e",
+      "name": "02_GenerateOutline"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"ТВОЯ РОЛЬ: Ты студент 3-го курса, пишешь курсовую работу. Твоя задача — заинтересовать преподавателя и четко обозначить, что ты будешь исследовать. Пиши на русском, за исключением технических терминов.\\n\\n ТЕМА: {{ $('02_GenerateOutline').first().json.topic }}\\n\\n ТРЕБОВАНИЯ:\\n1. ОБЪЕМ: Минимум {{ $('02_GenerateOutline').first().json.outline.introduction.targetWords }} слов.\\n2. АКТУАЛЬНОСТЬ: Объясни, почему эта тема важна ИМЕННО СЕЙЧАС (в 2026 году). Приведи примеры из жизни или индустрии.\\n3. СТРУКТУРА: Четко выдели Цель работы, Задачи (5-6 пунктов), Объект и Предмет исследования.\\n4. СТИЛЬ: Пиши уверенно, но без излишнего пафоса. Используй фразы: 'В данной работе рассматривается...', 'Актуальность обусловлена...'.\\n5. ЗАПРЕЩЕНО: {{ $('02_GenerateOutline').first().json.outline.introduction.forbid }}\\n\\n СКИЛЛЫ: Используй проверенные данные. Не выдумывай статистику. Если citing facts, делай это осторожно.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Напиши ВВЕДЕНИЕ к работе по теме: {{ $('02_GenerateOutline').first().json.topic }}. Раскрой актуальность и поставь задачи.\"\n    }\n  ],\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 16384,\n    \"temperature\": 0.7,\n    \"top_p\": 0.9,\n    \"repeat_penalty\": 1.1\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        -64
+      ],
+      "id": "dec3fb2d-5c32-4273-9107-8a28162844ee",
+      "name": "03_HTTP_Intro",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"РОЛЬ: Студент-практик, пишущий прикладную главу студенческой работы. Пиши на русском, за исключением технических терминов\\n\\n ТЕМА: {{ $('02_GenerateOutline').first().json.topic }}\\n РАЗДЕЛ: {{ $('02_GenerateOutline').first().json.outline.chapter2.title }}\\n ФОКУС: {{ $('02_GenerateOutline').first().json.outline.chapter2.focus }}\\n ОБЪЁМ: ~{{ $('02_GenerateOutline').first().json.outline.chapter2.targetWords }} слов.\\n\\n ЛОГИКА ПОВЕСТВОВАНИЯ (пиши единым академическим текстом, БЕЗ подзаголовков и списков):\\n1. Переход к практике: Обоснуй выбор методов/инструментов для реализации темы.\\n2. Инструментарий: Детальный разбор конкретных технологий. Сравни их по критериям (производительность, сложность, стоимость, экосистема).\\n3. Алгоритмы внедрения: Пошаговое описание процесса. Как настроить, развернуть, интегрировать? Опиши конфигурацию и среду.\\n4. Практические кейсы: 2-3 реальных сценария применения. Опиши контекст задачи, выбранное решение и полученный результат.\\n5. Проблемы и оптимизация: Типичные ошибки, узкие места, способы отладки и масштабирования.\\n6. Аналитический вывод: Твоя оценка эффективности подходов. Что работает стабильнее и почему?\\n\\n СТРОГИЕ ЗАПРЕТЫ: {{ $('02_GenerateOutline').first().json.outline.chapter2.forbid }}\\n\\n ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:\\n- Пиши СПЛОШНЫМ текстом абзацами. НИКАКИХ маркированных/нумерованных списков, жирного шрифта (**), заголовков (#), блоков кода (```).\\n- Используй академические связки: 'На практике это реализуется через...', 'Важным нюансом является...', 'Сравнительный анализ показывает...'.\\n- Будь конкретен: называй версии ПО, протоколы, метрики, а не абстрактные 'инструменты'.\\n- НЕ повторяй теорию из Главы 1. Фокус строго на 'как делать' и 'как работает в реальных условиях'.\\n- Никаких пометок вроде '(1000 слов)', '(продолжение)', '### Пример'.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Напиши текст ГЛАВЫ 2. Соблюдай фокус, запреты и структуру. Пиши готовым академическим текстом без разметки.\"\n    }\n  ],\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 16384,\n    \"temperature\": 0.65,\n    \"top_p\": 0.9,\n    \"repeat_penalty\": 1.15\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        -64
+      ],
+      "id": "c02f68c4-7151-405a-8f61-883100e0ce3d",
+      "name": "05_HTTP_Chapter2",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \" РОЛЬ: Студент-аналитик, пишущий теоретическую главу студенческой работы. Пиши на русском, за исключением технических терминов. \\n\\n ТЕМА: {{ $('02_GenerateOutline').first().json.topic }}\\n РАЗДЕЛ: {{ $('02_GenerateOutline').first().json.outline.chapter1.title }}\\n ФОКУС: {{ $('02_GenerateOutline').first().json.outline.chapter1.focus }}\\n ОБЪЁМ: ~{{ $('02_GenerateOutline').first().json.outline.chapter1.targetWords }} слов.\\n\\n ЛОГИКА ПОВЕСТВОВАНИЯ (пиши единым текстом, без подзаголовков):\\n1. Вводная часть: Обоснуй важность теоретического базиса для темы.\\n2. Терминология: Дай определения, сравни трактовки разных авторов, выдели ключевые признаки.\\n3. Эволюция: Как явление развивалось до текущего состояния (кратко, без воды).\\n4. Систематизация: Опиши классификации/виды/подходы СПЛОШНЫМ текстом (не маркированными списками).\\n5. Механизмы: Как это работает на уровне принципов и архитектуры.\\n6. Сравнение: Сопоставь подходы, укажи ограничения и преимущества каждого.\\n\\n СТРОГИЕ ЗАПРЕТЫ: {{ $('02_GenerateOutline').first().json.outline.chapter1.forbid }}\\n\\n ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:\\n- Пиши АКАДЕМИЧЕСКИМ, но живым языком. Избегай канцеляризмов.\\n- НИКАКОГО markdown: не используй #, **, *, ```, нумерованные списки.\\n- Связывай абзацы логическими мостиками ('Таким образом', 'В отличие от', 'Следует отметить').\\n- Раскрывай тему ГЛУБОКО: если тема узкая, расширяй через смежные концепции, но не повторяй Введение.\\n- Не добавляй пометки вида '(1000 слов)', '(продолжение)' и т.д.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Напиши текст ГЛАВЫ 1. Соблюдай структуру, фокус и запреты. Пиши готовым академическим текстом без разметки.\"\n    }\n  ],\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 16384,\n    \"temperature\": 0.6,\n    \"top_p\": 0.9,\n    \"repeat_penalty\": 1.15\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -64
+      ],
+      "id": "7670b939-9caa-45c3-b63a-d35f1794b789",
+      "name": "04_HTTP_Chapter1",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \" РОЛЬ: Студент-аналитик, пишущий заключительную аналитическую главу. Пиши на русском, за исключением технических терминов. \\n\\n ТЕМА: {{ $('02_GenerateOutline').first().json.topic }}\\n РАЗДЕЛ: {{ $('02_GenerateOutline').first().json.outline.chapter3.title }}\\n ФОКУС: {{ $('02_GenerateOutline').first().json.outline.chapter3.focus }}\\n ОБЪЁМ: ~{{ $('02_GenerateOutline').first().json.outline.chapter3.targetWords }} слов.\\n\\n ЛОГИКА ПОВЕСТВОВАНИЯ (единый академический текст, БЕЗ подзаголовков и списков):\\n1. Современные тренды: Какие технологии/подходы доминируют сейчас? Приведи конкретные примеры внедрения, метрики роста и сдвиги в индустрии.\\n2. Проблемы и вызовы: Опиши ключевые ограничения (безопасность, стоимость, сложность поддержки, нормативные барьеры, дефицит кадров). Раскрой каждую проблему аналитически, а не списком.\\n3. SWOT-анализ в прозе: Интегрируй анализ сильных/слабых сторон, возможностей и угроз в связный текст. Сравни внутренние факторы с внешними рисками, делай логические переходы между блоками.\\n4. Перспективы развития: Прогноз на 3-5-10 лет. Обоснуй каждое предположение текущими данными, векторами НИОКР и рыночными тенденциями.\\n5. Практические рекомендации: Конкретные шаги для специалистов и компаний. Какие компетенции развивать? Какие решения внедрять в первую очередь? Как минимизировать риски?\\n\\n СТРОГИЕ ЗАПРЕТЫ: {{ $('02_GenerateOutline').first().json.outline.chapter3.forbid }}\\n\\n ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:\\n- Пиши СПЛОШНЫМ текстом абзацами. ЗАПРЕЩЕНО использовать markdown (#, **, *, ```), нумерованные/маркированные списки, таблицы и подзаголовки.\\n- Используй аналитические связки: 'Анализ текущей ситуации показывает...', 'С одной стороны... с другой...', 'В среднесрочной перспективе ожидается...', 'Ключевым барьером остается...'.\\n- Опирайся на факты, данные и логику. Избегай голословных утверждений и.water.\\n- НЕ повторяй практические примеры из Главы 2. Фокус строго на аналитике, стратегических прогнозах и выводах.\\n- Никаких служебных пометок вроде '(1000 слов)', '(продолжение)', '### SWOT', 'Вывод:'.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Напиши текст ГЛАВЫ 3. Соблюдай фокус, аналитическую структуру и запреты. Пиши готовым академическим текстом без разметки.\"\n    }\n  ],\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 16384,\n    \"temperature\": 0.65,\n    \"top_p\": 0.9,\n    \"repeat_penalty\": 1.15\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        -64
+      ],
+      "id": "660cd70b-c0e6-467a-9722-6193ab05abe0",
+      "name": "06_HTTP_Chapter3",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"РОЛЬ: Студент, подводящий итоги масштабного исследования. Пиши на русском, за исключением технических терминов. \\n\\n ТЕМА: {{ $('02_GenerateOutline').first().json.topic }}\\n ФОКУС: {{ $('02_GenerateOutline').first().json.outline.conclusion.focus }}\\n📏 ОБЪЁМ: ~{{ $('02_GenerateOutline').first().json.outline.conclusion.targetWords }} слов.\\n\\n ЛОГИКА ПОВЕСТВОВАНИЯ (единый академический текст, БЕЗ списков и подзаголовков):\\n1. Общий итог: Резюмируй суть работы, её масштаб и место в контексте темы.\\n2. Детальные выводы по каждой части:\\n   - Введение: Какие задачи ставились и почему они были критичны.\\n   - Глава 1: Какие теоретические базы, определения и эволюционные аспекты систематизированы.\\n   - Глава 2: Какие практические инструменты, алгоритмы и кейсы проанализированы.\\n   - Глава 3: Какие тренды, ограничения и стратегические перспективы выявлены.\\n3. Подтверждение достижения цели: Явно свяжи цель из Введения с полученными результатами. Покажи, как решенные задачи привели к финальному выводу.\\n4. Практическая значимость: Кто может использовать эти результаты? Как внедрить выводы в реальную индустрию или учебный процесс?\\n\\n СТРОГИЕ ЗАПРЕТЫ: {{ $('02_GenerateOutline').first().json.outline.conclusion.forbid }}\\n\\n ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:\\n- Пиши СПЛОШНЫМ текстом абзацами. ЗАПРЕЩЕНО использовать markdown (#, **, *, ```), нумерованные/маркированные списки.\\n- Используй уверенные академические формулировки: 'Проведенное исследование подтвердило...', 'Анализ показал, что...', 'Можно констатировать...'.\\n- НЕ добавляй новую информацию или термины, которых не было в основных главах.\\n- Никаких служебных пометок вроде '(300 слов)', '(продолжение)', 'Вывод:', 'Итого:'.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Напиши текст ЗАКЛЮЧЕНИЯ. Соблюдай структуру, фокус и запреты. Пиши готовым академическим текстом без разметки.\"\n    }\n  ],\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 16384,\n    \"temperature\": 0.65,\n    \"top_p\": 0.9,\n    \"repeat_penalty\": 1.15\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1136,
+        -64
+      ],
+      "id": "a8ef4202-a54d-45fb-9fa7-357f4431d3f0",
+      "name": "07_HTTP_Conclusion",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "// === НАСТРОЙКИ ===\nconst OLLAMA_URL = 'http://172.17.0.1:11434/api/chat';\nconst MODEL = 'qwen2.5:7b';\n\n// === УСИЛЕННАЯ ОЧИСТКА (удаляет ВСЕ артефакты) ===\nconst cleanText = (text) => {\n  if (!text) return '';\n  \n  let cleaned = text;\n  \n  // 1. УДАЛЯЕМ СЛУЖЕБНЫЕ ТОКЕНЫ МОДЕЛЕЙ (критично!)\n  cleaned = cleaned\n    .replace(/<\\|im_start\\|>/g, '')           // Llama/Ollama start\n    .replace(/<\\|im_end\\|>/g, '')             // Llama/Ollama end\n    .replace(/<\\|endofprompt\\|>/g, '')        // Llama end of prompt\n    .replace(/<s>/g, '')                       // BOS token\n    .replace(/<\\/s>/g, '')                     // EOS token\n    .replace(/<\\|assistant\\|>/g, '')          // Assistant marker\n    .replace(/<\\|user\\|>/g, '')               // User marker\n    .replace(/<\\|system\\|>/g, '')             // System marker\n    .replace(/^user\\s+/im, '')                // \"user \" в начале строки\n    .replace(/^assistant\\s+/im, '')           // \"assistant \" в начале\n    .replace(/^system\\s+/im, '')              // \"system \" в начале\n    .replace(/<im_start>/g, '')               // Альтернативный формат\n    .replace(/<im_end>/g, '');                // Альтернативный формат\n  \n  // 2. УДАЛЯЕМ ВСЕ ИЕРОГЛИФЫ (любые, даже одиночные)\n  cleaned = cleaned.replace(/[\\u4e00-\\u9fff\\u3400-\\u4dbf\\u3000-\\u303f]+/g, '');\n  \n  // 3. УДАЛЯЕМ markdown и мусор\n  cleaned = cleaned\n    .replace(/#{1,6}\\s+/g, '')                    // Заголовки #\n    .replace(/\\*\\*/g, '')                          // Жирный **\n    .replace(/\\*/g, '')                            // Курсив *\n    .replace(/`{3,}/g, '')                        // Блоки кода ```\n    .replace(/`/g, '')                            // Инлайн код `\n    .replace(/\\[(\\d+)\\]/g, '')                    // Ссылки [1], [2]\n    .replace(/\\[(.*?)\\]\\(.*?\\)/g, '$1')          // Ссылки [text](url)\n    .replace(/\\(\\d+\\s+(?:слов|words)\\)/gi, '')   // (1000 слов)\n    .replace(/####?\\s+\\d+\\.\\s+/gi, '')           // #### 1.\n    .replace(/^[>\\-]\\s+/gm, '')                   // Цитаты и списки >, -\n    .replace(/^\\d+\\.\\s+/gm, '');                  // Нумерованные списки 1.\n  \n  // 4. ЧИСТИМ пробелы и переносы\n  cleaned = cleaned\n    .replace(/\\n{4,}/g, '\\n\\n')                   // Множественные переносы\n    .replace(/[ ]{3,}/g, ' ')                     // Множественные пробелы\n    .replace(/\\s+\\n/g, '\\n')                      // Пробелы перед переносом\n    .replace(/\\n\\s+/g, '\\n')                      // Пробелы после переноса\n    .trim();\n  \n  // 5. ПРОВЕРЯЕМ НА \"БИТЫЙ\" КОНЕЦ (обрыв предложения)\n  const sentences = cleaned.split(/[.!?]+/).filter(s => s.trim().length > 0);\n  const lastSentence = sentences.length > 0 ? sentences[sentences.length - 1].trim() : '';\n  \n  const hasBrokenEnd = \n    lastSentence.length > 3 &&                    // Если последний обрывок > 3 слов\n    lastSentence.length < 30 &&                   // И короткий (< 30 символов)\n    !/[.!?]$/.test(cleaned.trim()) &&            // И не заканчивается на точку\n    !/^(на|в|и|но|а|что|как|это|так|же|для|по|от|с|к|у|из|за|под|над|при|без|через|между)\\s/i.test(lastSentence); // И не начинается с предлога/союза\n  \n  if (hasBrokenEnd) {\n    console.log(`    • ⚠️ Текст оборван на конце (последние слова: \"${lastSentence.slice(0, 40)}...\"), помечаю для дописывания`);\n    // Добавляем многоточие как маркер обрыва\n    cleaned = cleaned.replace(/([^.!?])\\s*$/, '$1...');\n  }\n  \n  // 6. ПРОВЕРЯЕМ НА ОСТАТОЧНЫЕ АРТЕФАКТЫ\n  const hasArtifacts = /<\\|im_|<im_|^user\\s|^assistant\\s|^system\\s/i.test(cleaned);\n  if (hasArtifacts) {\n    console.log(`    • ⚠️ Обнаружены остаточные служебные токены`);\n  }\n  \n  return cleaned;\n};\n\n// === ПОДСЧЕТ СЛОВ ===\nconst countWords = text => {\n  if (!text) return 0;\n  return text.trim().split(/\\s+/).filter(w => w.length > 0).length;\n};\n\n// === СБОР ДАННЫХ ===\nconst topic = $('02_GenerateOutline').first().json.topic || 'Без темы';\nconst outline = $('02_GenerateOutline').first().json.outline || {};\n\nconst sections = {\n  intro: $('03_HTTP_Intro').first().json.message?.content || '',\n  ch1: $('04_HTTP_Chapter1').first().json.message?.content || '',\n  ch2: $('05_HTTP_Chapter2').first().json.message?.content || '',\n  ch3: $('06_HTTP_Chapter3').first().json.message?.content || '',\n  conclusion: $('07_HTTP_Conclusion').first().json.message?.content || ''\n};\n\nconst sectionNames = {\n  intro: 'Введение',\n  ch1: 'Глава 1',\n  ch2: 'Глава 2',\n  ch3: 'Глава 3',\n  conclusion: 'Заключение'\n};\n\n// === ЦЕЛЕВЫЕ ОБЪЕМЫ ===\nconst targets = {\n  intro: outline.introduction?.targetWords || 1200,\n  ch1: outline.chapter1?.targetWords || 4500,\n  ch2: outline.chapter2?.targetWords || 4000,\n  ch3: outline.chapter3?.targetWords || 4000,\n  conclusion: outline.conclusion?.targetWords || 1200\n};\n\n// === ПОСЛЕДОВАТЕЛЬНАЯ ОБРАБОТКА ===\nconsole.log('\\n=== 🛡️ ЗАПУСК ВАЛИДАТОРА ===');\nconsole.log(`Тема: ${topic}`);\n\nconst processed = {};\nconst report = { actions: [], stats: {} };\nlet totalArtifactsFound = 0;\n\nfor (const [key, raw] of Object.entries(sections)) {\n  console.log(`\\n[✓] Обрабатываю: ${sectionNames[key]}`);\n  \n  // 1. Базовая очистка\n  let text = cleanText(raw);\n  \n  // 2. Проверка на артефакты после очистки\n  const hasArtifacts = /<\\|im_|<im_|^user\\s|^assistant\\s|^system\\s|[\\u4e00-\\u9fff]{2,}/i.test(text);\n  if (hasArtifacts) {\n    totalArtifactsFound++;\n    console.log(`    • ⚠️ Найдены артефакты после очистки`);\n  }\n  \n  // 3. Проверка объема\n  const words = countWords(text);\n  const target = targets[key];\n  const percent = Math.round((words / target) * 100);\n  \n  console.log(`    • Слова: ${words} / ${target} (${percent}%)`);\n  report.stats[key] = { words, target, percent };\n  \n  // 4. Если мало слов ИЛИ есть артефакты — дописываем/перегенерируем\n  const needsExpansion = words < target * 0.8;\n  const needsRegen = hasArtifacts && words < target * 0.9;\n  \n  if (needsExpansion || needsRegen) {\n    if (needsRegen) {\n      console.log(`    • ⚠️ Критические артефакты + мало слов, запускаю перегенерацию...`);\n    } else {\n      console.log(`    • ⚠️ Мало слов, запускаю дописывание...`);\n    }\n    \n    const needed = Math.round(target - words);\n    const prompt = needsRegen \n      ? `ПЕРЕПИШИ раздел \"${sectionNames[key]}\" по теме \"${topic}\".\n      \n      ТЕКУЩИЙ ТЕКСТ (содержит ошибки/артефакты, замени его полностью):\n      ${text.substring(0, 500)}...\n      \n      ТРЕБОВАНИЯ:\n      1. Объем: МИНИМУМ ${target} слов\n      2. Пиши ТОЛЬКО НА РУССКОМ (кроме терминов: Docker, API, JSON и т.п.)\n      3. СПЛОШНОЙ академический текст, без списков и заголовков\n      4. Раскрой тему глубоко: определения, история, классификации, примеры\n      5. НЕ используй служебные токены и markdown\n      \n      Верни ПОЛНЫЙ текст раздела.`\n      : `ДОПОЛНИ текст раздела \"${sectionNames[key]}\" по теме \"${topic}\".\n      \n      ТЕКУЩИЙ ТЕКСТ (не повторяй, а РАСШИРИ):\n      ${text.substring(0, 800)}...\n      \n      ДОБАВЬ (минимум ${needed} слов):\n      - Дополнительные примеры, детали, сравнения\n      - Исторический контекст или технические нюансы\n      - Практические выводы\n      \n      ТРЕБОВАНИЯ:\n      1. Пиши ТОЛЬКО НА РУССКОМ (кроме терминов: Docker, API, JSON и т.п.)\n      2. СПЛОШНОЙ текст, без списков и заголовков\n      3. Логически вписывай дополнения в существующий текст\n      \n      Верни ТОЛЬКО дополнение, без пояснений.`;\n    \n    try {\n      const res = await fetch(OLLAMA_URL, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          model: MODEL,\n          messages: [{ role: 'user', content: prompt }],\n          stream: false,\n          options: { \n            num_predict: needsRegen ? 12000 : 8000,\n            temperature: 0.65,\n            top_p: 0.9,\n            repeat_penalty: 1.15\n          }\n        })\n      });\n      \n      const data = await res.json();\n      const addition = cleanText(data.message?.content || '');\n      \n      if (addition && addition.length > 100) {\n        if (needsRegen) {\n          text = addition; // Полная замена\n          console.log(`    • ✅ Перегенерировано: ${countWords(text)} слов`);\n          report.actions.push(`${sectionNames[key]}: перегенерировано (${countWords(text)} слов)`);\n        } else {\n          text = text + '\\n\\n' + addition; // Дополнение\n          const newWords = countWords(text);\n          console.log(`    • ✅ Дописано: +${newWords - words} слов (всего: ${newWords})`);\n          report.actions.push(`${sectionNames[key]}: +${newWords - words} слов`);\n        }\n      } else {\n        console.log(`    • ⚠️ Предупреждение: пустой ответ от модели`);\n      }\n    } catch (e) {\n      console.error(`    • ❌ Ошибка: ${e.message}`);\n      report.actions.push(`${sectionNames[key]}: ошибка обработки`);\n    }\n  }\n  \n  // 5. Сохраняем результат\n  processed[key] = text;\n}\n\n// === ФИНАЛЬНАЯ СТАТИСТИКА ===\nconst totalWords = Object.values(processed).reduce((sum, t) => sum + countWords(t), 0);\nconst avgPercent = Object.values(report.stats).reduce((sum, s) => sum + s.percent, 0) / Object.keys(report.stats).length;\n\nconsole.log(`\\n=== 📊 ИТОГИ ВАЛИДАЦИИ ===`);\nconsole.log(`Всего слов: ${totalWords} (~${Math.round(totalWords/450)} страниц)`);\nconsole.log(`Среднее выполнение плана: ${Math.round(avgPercent)}%`);\nconsole.log(`Найдено артефактов: ${totalArtifactsFound}`);\nconsole.log(`Выполнено действий: ${report.actions.length}`);\nif (report.actions.length > 0) {\n  console.log(`Действия: ${report.actions.join('; ')}`);\n}\n\nconst status = totalArtifactsFound === 0 && report.actions.length === 0 \n  ? 'APPROVED' \n  : 'FIXED';\n\nconsole.log(`\\nСтатус: ${status === 'APPROVED' ? '✅ Все разделы в порядке' : '⚠️ Внесены исправления'}`);\n\n// === ВЫВОД ===\nreturn [{\n  json: {\n    topic: topic,\n    intro: processed.intro,\n    ch1: processed.ch1,\n    ch2: processed.ch2,\n    ch3: processed.ch3,\n    conclusion: processed.conclusion,\n    validationReport: {\n      status: status,\n      actions: report.actions,\n      stats: report.stats,\n      totalWords: totalWords,\n      estimatedPages: Math.round(totalWords / 450),\n      artifactsFound: totalArtifactsFound,\n      averageCompletion: Math.round(avgPercent)\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        176
+      ],
+      "id": "a4dea644-ec75-4059-9f4d-31cbc6f3503b",
+      "name": "08_ValidatorAndAutoFix"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        176
+      ],
+      "id": "5627a73d-3238-4d7e-a584-1275af2cc0f4",
+      "name": "09_Respond_SendFile"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { topic, intro, ch1, ch2, ch3, conclusion, validationReport } = items[0].json;\nconst outline = $('02_GenerateOutline').first().json.outline;\n\n// Функция очистки markdown\nconst cleanText = (text) => {\n  if (!text) return '';\n  return text\n    .replace(/#{1,6}\\s+/g, '')           // Заголовки #\n    .replace(/\\*\\*/g, '')                 // Жирный **\n    .replace(/\\(\\d+\\s+слов\\)/gi, '')     // (1000 слов)\n    .replace(/####?\\s+/g, '')            // #### \n    .replace(/\\n{4,}/g, '\\n\\n')\n    .trim();\n};\n\n// Очищаем все разделы\nconst cleanIntro = cleanText(intro);\nconst cleanCh1 = cleanText(ch1);\nconst cleanCh2 = cleanText(ch2);\nconst cleanCh3 = cleanText(ch3);\nconst cleanConclusion = cleanText(conclusion);\n\n// Динамическое оглавление\nconst tocItems = [\n  { title: outline.introduction?.title || 'Введение', page: 2 },\n  { title: outline.chapter1?.title || 'Глава 1', page: 3 },\n  { title: outline.chapter2?.title || 'Глава 2', page: 8 },\n  { title: outline.chapter3?.title || 'Глава 3', page: 13 },\n  { title: outline.conclusion?.title || 'Заключение', page: 17 },\n  { title: 'Список использованных источников', page: 18 }\n];\n\n// Универсальный список литературы\nconst references = `СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ\n\n**Нормативные документы:**\n\n1. Гражданский кодекс Российской Федерации (часть четвертая) от 18.12.2006 № 230-ФЗ (ред. от 2024 г.).\n\n2. ГОСТ Р 7.0.97-2016. Система стандартов по информации, библиотечному и издательскому делу. Организационно-распорядительная документация. — М.: Стандартинформ, 2016.\n\n3. ГОСТ Р 7.0.5-2008. Библиографическая ссылка. Общие требования и правила составления. — М.: Стандартинформ, 2008.\n\n**Учебники и научная литература (2021-2026):**\n\n4. Таненбаум, Э. Архитектура компьютера / Э. Таненбаум, Т. Остин. — 7-е изд. — СПб.: Питер, 2022. — 992 с.\n\n5. Гордеев, А.В. Операционные системы: учебное пособие для вузов / А.В. Гордеев. — 3-е изд. — СПб.: Питер, 2023. — 544 с.\n\n6. Васильев, А.В. Операционные системы: учебник для бакалавриата и магистратуры / А.В. Васильев. — 2-е изд. — М.: Юрайт, 2024. — 456 с.\n\n7. Олифер, В.Г. Сетевые операционные системы / В.Г. Олифер, Н.А. Олифер. — 3-е изд. — СПб.: Питер, 2023. — 896 с.\n\n8. Silberschatz, A. Operating System Concepts / A. Silberschatz, P.B. Galvin, G. Gagne. — 11th ed. — Hoboken: Wiley, 2023. — 976 p.\n\n**Электронные ресурсы:**\n\n9. Официальный сайт Министерства науки и высшего образования РФ [Электронный ресурс]. — URL: https://minobrnauki.gov.ru (дата обращения: 20.05.2026).\n\n10. Научная электронная библиотека eLIBRARY.RU [Электронный ресурс]. — URL: https://elibrary.ru (дата обращения: 20.05.2026).\n\n11. КиберЛенинка — научная электронная библиотека [Электронный ресурс]. — URL: https://cyberleninka.ru (дата обращения: 20.05.2026).`;\n\n// === ГЕНЕРАЦИЯ ОГЛАВЛЕНИЯ С ТОЧКАМИ (через символы, не CSS) ===\nconst generateToc = (items) => {\n  return items.map(item => {\n    const dots = ' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ';\n    return `<p class=\"toc-item\" style=\"text-indent: 0; margin: 0.5cm 0; line-height: 1.3;\">\n      <span style=\"display: inline; max-width: 75%;\">${item.title}</span>\n      <span style=\"display: inline; margin: 0 2px; user-select: none;\">${dots}</span>\n      <span style=\"display: inline; min-width: 30px; text-align: right;\">${item.page}</span>\n    </p>`;\n  }).join('\\n');\n};\n\n// Генерация HTML\nconst html = `<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n<meta charset=\"UTF-8\">\n<title>${topic}</title>\n<style>\n@page { margin: 2cm 1.5cm 2cm 3cm; }\nbody { font-family: \"Times New Roman\", serif; font-size: 14pt; line-height: 1.5; color: #000; }\np { text-align: justify; text-indent: 1.25cm; margin: 0 0 0.3cm 0; }\nh1 { font-size: 16pt; text-align: center; font-weight: bold; margin: 1cm 0; page-break-before: always; }\nh1:first-of-type { page-break-before: avoid; }\n.page-break { page-break-after: always; }\n.no-indent { text-indent: 0; }\n.center { text-align: center; }\n.right { text-align: right; width: 50%; margin-left: auto; }\n.toc { margin: 1cm 0; }\n/* УБРАЛИ border-bottom — теперь точки через символы */\n.toc-item { margin: 0.5cm 0; text-indent: 0; }\n</style>\n</head>\n<body>\n\n<!-- Титульный лист -->\n<div class=\"center page-break\">\n<p class=\"no-indent\">МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РФ</p>\n<br><br><br>\n<p class=\"no-indent\"><b>НАЗВАНИЕ УНИВЕРСИТЕТА</b></p>\n<br><br><br><br><br>\n<p class=\"no-indent\"><b>СТУДЕНЧЕСКАЯ РАБОТА</b></p>\n<p class=\"no-indent\">по дисциплине: \"Информационные технологии\"</p>\n<p class=\"no-indent\">на тему: <b>\"${topic}\"</b></p>\n<br><br><br><br><br>\n<div class=\"right\">\n<p class=\"no-indent\">Выполнил: студент гр. ИТ-101<br>Иванов И.И.</p>\n<br>\n<p class=\"no-indent\">Проверил: доцент<br>Петров П.П.</p>\n</div>\n<br><br><br><br><br><br><br>\n<p class=\"no-indent\">Москва 2026</p>\n</div>\n\n<!-- Оглавление -->\n<h1>СОДЕРЖАНИЕ</h1>\n<div class=\"toc\">\n${generateToc(tocItems)}\n</div>\n\n<!-- Текст работы -->\n<h1>${(outline.introduction?.title || 'ВВЕДЕНИЕ').toUpperCase()}</h1>\n<div>${cleanIntro.replace(/\\n/g, '<br>')}</div>\n\n<h1>${(outline.chapter1?.title || 'ГЛАВА 1').toUpperCase()}</h1>\n<div>${cleanCh1.replace(/\\n/g, '<br>')}</div>\n\n<h1>${(outline.chapter2?.title || 'ГЛАВА 2').toUpperCase()}</h1>\n<div>${cleanCh2.replace(/\\n/g, '<br>')}</div>\n\n<h1>${(outline.chapter3?.title || 'ГЛАВА 3').toUpperCase()}</h1>\n<div>${cleanCh3.replace(/\\n/g, '<br>')}</div>\n\n<h1>${(outline.conclusion?.title || 'ЗАКЛЮЧЕНИЕ').toUpperCase()}</h1>\n<div>${cleanConclusion.replace(/\\n/g, '<br>')}</div>\n\n<h1>СПИСОК ИСТОЧНИКОВ</h1>\n<div>${references.replace(/\\n/g, '<br>')}</div>\n\n</body>\n</html>`;\n\nreturn [{\n  json: {\n    topic: topic,\n    result: html,\n    fileName: `Student_Work_${topic.replace(/[^a-zA-Z0-9а-яА-ЯёЁ0-9]/g, '_')}.html`,\n    stats: validationReport\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        176
+      ],
+      "id": "6d603246-3477-49e8-8edb-7f8778b00050",
+      "name": "09_GenerateFinalHTML"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01_Webhook_ReceiveTopic": {
+      "main": [
+        [
+          {
+            "node": "02_GenerateOutline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02_GenerateOutline": {
+      "main": [
+        [
+          {
+            "node": "03_HTTP_Intro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03_HTTP_Intro": {
+      "main": [
+        [
+          {
+            "node": "04_HTTP_Chapter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05_HTTP_Chapter2": {
+      "main": [
+        [
+          {
+            "node": "06_HTTP_Chapter3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04_HTTP_Chapter1": {
+      "main": [
+        [
+          {
+            "node": "05_HTTP_Chapter2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06_HTTP_Chapter3": {
+      "main": [
+        [
+          {
+            "node": "07_HTTP_Conclusion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07_HTTP_Conclusion": {
+      "main": [
+        [
+          {
+            "node": "08_ValidatorAndAutoFix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08_ValidatorAndAutoFix": {
+      "main": [
+        [
+          {
+            "node": "09_GenerateFinalHTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09_Respond_SendFile": {
+      "main": [
+        []
+      ]
+    },
+    "09_GenerateFinalHTML": {
+      "main": [
+        [
+          {
+            "node": "09_Respond_SendFile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cae1f265-4354-4e59-bca6-ef54802a162f",
+  "meta": {
+    "instanceId": "1049fa9545041c8b448da8bbb24368aedc39f269e7fdfddc5e75124d94c89765"
+  },
+  "id": "tNdia2k7RiwpDZq0",
+  "tags": []
+}
