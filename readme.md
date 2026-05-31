@@ -21,7 +21,7 @@
 ```bash
 # Клонируй репозиторий
 git clone https://github.com/OlegRozh/Student-assistant.git
-cd student-ai-writer
+cd Student-assistant
 ```
 
 ### Создай файл .env по примеру ниже
@@ -163,4 +163,4 @@ DEEPSEEK_API_KEY=sk-твой-реальный-ключ
 
 - **Открой Pull Request**
 
-- **Или просто напиши в Issues**
+Или просто напиши в Issues
